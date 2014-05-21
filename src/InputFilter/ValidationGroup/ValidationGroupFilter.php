@@ -39,7 +39,7 @@ class ValidationGroupFilter extends FilterIterator
     public function __construct(Iterator $iterator, array $inputKeys)
     {
         parent::__construct($iterator);
-        $this->inputKeys = $inputKeys;
+        $this->inputKeys = array_flip($inputKeys);
     }
 
     /**
@@ -47,6 +47,9 @@ class ValidationGroupFilter extends FilterIterator
      */
     public function accept()
     {
-        return isset($this->inputKeys[$this->getInnerIterator()->current()]);
+        $iterator = $this->getInnerIterator();
+        $inputKey = is_string($iterator->current()) ? $iterator->current() : $iterator->key();
+
+        return isset($this->inputKeys[$inputKey]);
     }
 }

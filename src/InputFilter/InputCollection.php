@@ -111,6 +111,9 @@ class InputCollection extends Input implements InputCollectionInterface
             return $this->buildInputFilterResult($data, [], $errorMessages);
         }
 
+        // Prepare the data according to the validation group
+        $data = $this->prepareData($data);
+
         /** @var InputInterface $input */
         foreach ($this->getIterator() as $input) {
             $name     = $input->getName();
@@ -156,12 +159,34 @@ class InputCollection extends Input implements InputCollectionInterface
      */
     public function getIterator()
     {
+        return new ArrayIterator($this->inputs);
+    }
+
+    /**
+     * @param  array $data
+     * @return array
+     */
+    protected function prepareData(array $data)
+    {
+        // If validation group is set to validate all, then we have nothing to do
         if ($this->validationGroup === self::VALIDATE_ALL) {
-            $inputKeys = array_keys($this->inputs);
-        } else {
-            $inputKeys = $this->validationGroup;
+            return $data;
         }
 
-        return new ValidationGroupFilter(new ArrayIterator($this->inputs), $inputKeys);
+        // Otherwise, we need to prepare the validation group, and filtering keys that are not in
+        // the validation group
+        foreach ($this->validationGroup as $key => $value) {
+            if (is_string($key) && isset($this->inputs[$key]) && $this->inputs[$key] instanceof InputCollection) {
+                $this->inputs[$key]->setValidationGroup($value);
+                continue;
+            }
+
+            if (is_int($key) && isset($this->inputs[$value]) && $this->inputs[$value] instanceof InputCollection) {
+                $this->inputs[$value]->setValidationGroup(self::VALIDATE_ALL);
+                continue;
+            }
+        }
+
+        return $data;
     }
 }
