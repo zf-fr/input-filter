@@ -21,6 +21,10 @@ use IteratorAggregate;
  */
 interface InputCollectionInterface extends InputInterface, IteratorAggregate
 {
+    /** Validation group constants */
+    const VALIDATE_ALL  = 0;
+    const VALIDATE_NONE = 1;
+
     /**
      * Add an input or another input collection (if no name was set, it will extract the one set in
      * the input or input collection)
@@ -53,4 +57,19 @@ interface InputCollectionInterface extends InputInterface, IteratorAggregate
      * @return void
      */
     public function removeInput($name);
+
+    /**
+     * Set the validation group
+     *
+     * @param  int|array $validationGroup
+     * @return void
+     */
+    public function setValidationGroup($validationGroup);
+
+    /**
+     * Get the validation group
+     *
+     * @return int|array
+     */
+    public function getValidationGroup();
 }

@@ -11,6 +11,7 @@ namespace InputFilter;
 
 use ArrayIterator;
 use InputFilter\Result\InputFilterResult;
+use InputFilter\ValidationGroup\ValidationGroupFilter;
 
 /**
  * Input collection class
@@ -21,6 +22,11 @@ class InputCollection extends Input implements InputCollectionInterface
      * @var InputInterface[]
      */
     protected $inputs = [];
+
+    /**
+     * @var int|array
+     */
+    protected $validationGroup = self::VALIDATE_ALL;
 
     /**
      * {@inheritDoc}
@@ -72,6 +78,22 @@ class InputCollection extends Input implements InputCollectionInterface
     /**
      * {@inheritDoc}
      */
+    public function setValidationGroup($validationGroup)
+    {
+        $this->validationGroup = $validationGroup;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getValidationGroup()
+    {
+        return $this->validationGroup;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function runAgainst($data, $context = null)
     {
         $filteredData  = [];
@@ -82,6 +104,11 @@ class InputCollection extends Input implements InputCollectionInterface
 
         if (!$result->isValid()) {
             $errorMessages[$this->name] = $result->getErrorMessages();
+        }
+
+        // We may want to actually validate nothing
+        if ($this->validationGroup === self::VALIDATE_NONE) {
+            return $this->buildInputFilterResult($data, [], $errorMessages);
         }
 
         /** @var InputInterface $input */
@@ -129,6 +156,12 @@ class InputCollection extends Input implements InputCollectionInterface
      */
     public function getIterator()
     {
-        return new ArrayIterator($this->inputs);
+        if ($this->validationGroup === self::VALIDATE_ALL) {
+            $inputKeys = array_keys($this->inputs);
+        } else {
+            $inputKeys = $this->validationGroup;
+        }
+
+        return new ValidationGroupFilter(new ArrayIterator($this->inputs), $inputKeys);
     }
 }

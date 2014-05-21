@@ -171,6 +171,8 @@ class Input implements InputInterface
         $filteredValue  = $this->filterChain->filter($value, $context);
         $validatorChain = $this->getValidatorChain();
 
+        // @TODO: how to use the Required validator?
+
         if ((null === $filteredValue && $this->allowEmpty)
             || $validatorChain->isValid($filteredValue, $context)
         ) {
