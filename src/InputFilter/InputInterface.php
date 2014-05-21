@@ -18,6 +18,9 @@
 
 namespace InputFilter;
 
+use Zend\Filter\FilterChain;
+use Zend\Validator\ValidatorChain;
+
 /**
  * Interface for an input
  *

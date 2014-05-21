@@ -9,7 +9,7 @@
 
 namespace InputFilter;
 
-use Zend\InputFilter\Result\InputFilterResult;
+use InputFilter\Result\InputFilterResult;
 use Zend\Validator\NotEmpty;
 use Zend\Validator\ValidatorChain;
 use Zend\Filter\FilterChain;
@@ -50,13 +50,15 @@ class Input implements InputInterface
     protected $validatorChain;
 
     /**
-     * @param FilterChain|null    $filterChain
-     * @param ValidatorChain|null $validatorChain
+     * Constructor
+     *
+     * @param string $name
      */
-    public function __construct(FilterChain $filterChain = null, ValidatorChain $validatorChain = null)
+    public function __construct($name = null)
     {
-        $this->filterChain    = $filterChain ?: new FilterChain();
-        $this->validatorChain = $validatorChain ?: new ValidatorChain();
+        $this->name           = (string) $name;
+        $this->filterChain    = new FilterChain();
+        $this->validatorChain = new ValidatorChain();
     }
 
     /**
@@ -147,7 +149,7 @@ class Input implements InputInterface
      */
     public function runAgainst($value, $context = null)
     {
-        $filteredValue = $this->filterChain->filter($value);
+        $filteredValue = $this->filterChain->filter($value, $context);
 
         if (
             $this->validatorChain->isValid($filteredValue, $context)

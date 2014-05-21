@@ -10,7 +10,6 @@
 namespace InputFilter;
 
 use IteratorAggregate;
-use InputFilter\ValidationGroup\ValidationGroupInterface;
 
 /**
  * Input Collection interface
@@ -26,42 +25,32 @@ interface InputCollectionInterface extends InputInterface, IteratorAggregate
      * Add an input or another input collection (if no name was set, it will extract the one set in
      * the input or input collection)
      *
-     * @param  InputInterface|InputCollectionInterface|array $inputOrInputCollection
-     * @param  string|null                                   $name
+     * @param  InputInterface $input
      * @return void
      */
-    public function add($inputOrInputCollection, $name = null);
+    public function addInput(InputInterface $input);
 
     /**
-     * Get an input or an input collection by name
+     * Get an input by name
      *
      * @param  string $name
-     * @return InputInterface|InputCollectionInterface
+     * @return InputInterface
      */
-    public function get($name);
+    public function getInput($name);
 
     /**
-     * Check if the input collection contains an input or another input collection with the name given
+     * Check if the input collection contains an input with the name given
      *
      * @param  string $name
      * @return bool
      */
-    public function has($name);
+    public function hasInput($name);
 
     /**
-     * Remove the input or input collection from the given name
+     * Remove the input with the given name
      *
      * @param  string $name
      * @return void
      */
-    public function remove($name);
-
-    /**
-     * Register a validation group, optionally with a name
-     *
-     * @param  ValidationGroupInterface $validationGroup
-     * @param  string                   $name
-     * @return void
-     */
-    public function registerValidationGroup(ValidationGroupInterface $validationGroup, $name = 'default');
+    public function removeInput($name);
 }

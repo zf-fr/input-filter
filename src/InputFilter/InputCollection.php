@@ -7,13 +7,10 @@
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
-namespace Zend\InputFilter;
+namespace InputFilter;
 
 use ArrayIterator;
-use IteratorIterator;
-use Zend\Filter\FilterChain;
-use Zend\InputFilter\Result\InputFilterResult;
-use Zend\InputFilter\ValidationGroup\ValidationGroupInterface;
+use InputFilter\Result\InputFilterResult;
 use Zend\Validator\ValidatorChain;
 
 /**
@@ -22,99 +19,55 @@ use Zend\Validator\ValidatorChain;
 class InputCollection extends Input implements InputCollectionInterface
 {
     /**
-     * @var Factory
-     */
-    protected $factory;
-
-    /**
      * @var InputCollectionInterface[]|InputInterface[]
      */
-    protected $children = [];
-
-    /**
-     * @var ValidationGroupInterface[]
-     */
-    protected $validationGroups = [];
-
-    /**
-     * @param FilterChain|null    $filterChain
-     * @param ValidatorChain|null $validatorChain
-     * @param Factory|null        $factory
-     */
-    public function __construct(
-        FilterChain $filterChain = null,
-        ValidatorChain $validatorChain = null,
-        Factory $factory = null
-    ) {
-        parent::__construct($filterChain, $validatorChain);
-        $this->factory = $factory ?: new Factory(new InputFilterPluginManager());
-    }
-
-    /**
-     * Get the input collection factory
-     *
-     * @return Factory
-     */
-    public function getFactory()
-    {
-        return $this->factory;
-    }
+    protected $inputs = [];
 
     /**
      * {@inheritDoc}
      */
-    public function add($inputOrInputCollection, $name = null)
+    public function addInput(InputInterface $input)
     {
-        // NOTE: you MUST NOT check against Traversable here, because InputCollection is a Traversable itself
-        if (is_array($inputOrInputCollection)) {
-            $inputOrInputCollection = $this->factory->createFromSpecification($inputOrInputCollection);
-        }
-
-        if (null !== $name) {
-            $inputOrInputCollection->setName($name);
-        }
-
-        $this->children[$inputOrInputCollection->getName()] = $inputOrInputCollection;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function get($name)
-    {
-        if (!isset($this->children[$name])) {
+        if (null === $input->getName()) {
             throw new Exception\RuntimeException(sprintf(
-                'No input or input collection named "%s" was found in input collection "%s"',
+                'Input of type "%s" does not have a name',
+                get_class($input)
+            ));
+        }
+
+        $this->inputs[$input->getName()] = $input;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getInput($name)
+    {
+        if (!isset($this->inputs[$name])) {
+            throw new Exception\RuntimeException(sprintf(
+                'No input named "%s" was found in input collection "%s"',
                 $name,
                 $this->getName()
             ));
         }
 
-        return $this->children[$name];
+        return $this->inputs[$name];
     }
 
     /**
      * {@inheritDoc}
      */
-    public function has($name)
+    public function hasInput($name)
     {
-        return isset($this->children[$name]);
+        return isset($this->inputs[$name]);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function remove($name)
+    public function removeInput($name)
     {
-        unset($this->children[$name]);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function registerValidationGroup(ValidationGroupInterface $validationGroup, $name = 'default')
-    {
-        $this->validationGroups[$name] = $validationGroup;
+        unset($this->inputs[$name]);
     }
 
     /**
@@ -137,23 +90,17 @@ class InputCollection extends Input implements InputCollectionInterface
             }
         }
 
-        if (null === $validationGroupName) {
-            $iterator = $this;
-        } else {
-            $iterator = $this->getFilterIterator($validationGroupName);
-        }
-
-        /** @var InputInterface|InputCollectionInterface $inputOrInputCollection */
-        foreach ($iterator as $inputOrInputCollection) {
-            $name     = $inputOrInputCollection->getName();
+        /** @var InputInterface $input */
+        foreach ($this->getIterator() as $input) {
+            $name     = $input->getName();
             $rawValue = isset($data[$name]) ? $data[$name] : null;
 
-            $inputFilterResult = $inputOrInputCollection->runAgainst($rawValue, $context);
+            $inputFilterResult = $input->runAgainst($rawValue, $context);
 
             if (!$inputFilterResult->isValid()) {
                 $errorMessages[$name] = $inputFilterResult->getErrorMessages();
 
-                if ($inputOrInputCollection->breakOnFailure()) {
+                if ($input->breakOnFailure()) {
                     break;
                 }
             } else {
@@ -182,23 +129,6 @@ class InputCollection extends Input implements InputCollectionInterface
     }
 
     /**
-     * Get a filter iterator from the validation group name
-     *
-     * @param  string $validationGroupName
-     * @return \FilterIterator
-     */
-    protected function getFilterIterator($validationGroupName)
-    {
-        if (!isset($this->validationGroups[$validationGroupName])) {
-            // @TODO: throw exception?
-        }
-
-        $validationGroup = $this->validationGroups[$validationGroupName];
-        
-        return $validationGroup->createFilterIterator($this);
-    }
-
-    /**
      * --------------------------------------------------------------------------------
      * Implementation of IteratorAggregate interface
      * --------------------------------------------------------------------------------
@@ -209,6 +139,6 @@ class InputCollection extends Input implements InputCollectionInterface
      */
     public function getIterator()
     {
-        return new ArrayIterator($this->children);
+        return new ArrayIterator($this->inputs);
     }
 }

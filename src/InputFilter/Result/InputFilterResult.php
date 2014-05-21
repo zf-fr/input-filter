@@ -30,6 +30,11 @@ class InputFilterResult implements InputFilterResultInterface
     protected $errorMessages = [];
 
     /**
+     * @var bool
+     */
+    protected $isValid;
+
+    /**
      * Constructor
      *
      * @param mixed $rawData
@@ -41,6 +46,7 @@ class InputFilterResult implements InputFilterResultInterface
         $this->rawData       = $rawData;
         $this->data          = $data;
         $this->errorMessages = $errorMessages;
+        $this->isValid       = empty($errorMessages);
     }
 
     /**
@@ -48,7 +54,7 @@ class InputFilterResult implements InputFilterResultInterface
      */
     public function isValid()
     {
-        return empty($this->errorMessages);
+        return $this->isValid;
     }
 
     /**
