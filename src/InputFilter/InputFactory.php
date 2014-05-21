@@ -29,7 +29,7 @@ use Zend\Validator\ValidatorPluginManager;
  * @author  Michaël Gallego <mic.gallego@gmail.com>
  * @licence MIT
  */
-class InputFilterFactory
+class InputFactory
 {
     /**
      * @var InputFilterPluginManager

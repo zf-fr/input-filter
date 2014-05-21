@@ -80,10 +80,7 @@ class Input implements InputInterface
      */
     public function setRequired($required)
     {
-        if ($required) {
-            $this->required = true;
-            $this->validatorChain->attachByName(NotEmpty::class, [], self::REQUIRED_VALIDATOR_PRIORITY);
-        }
+        $this->required = (bool) $required;
     }
 
     /**
@@ -139,7 +136,11 @@ class Input implements InputInterface
      */
     public function getFilterChain()
     {
-        return $this->filterChain ?: new FilterChain();
+        if (null === $this->filterChain) {
+            $this->filterChain = new FilterChain();
+        }
+
+        return $this->filterChain;
     }
 
     /**
@@ -147,7 +148,11 @@ class Input implements InputInterface
      */
     public function setValidatorChain(ValidatorChain $validatorChain)
     {
-        $this->validatorChain = $validatorChain;
+        if (null === $this->validatorChain) {
+            $this->validatorChain = new ValidatorChain();
+        }
+
+        return $this->validatorChain;
     }
 
     /**
@@ -163,17 +168,17 @@ class Input implements InputInterface
      */
     public function runAgainst($value, $context = null)
     {
-        $filteredValue = $this->filterChain->filter($value, $context);
+        $filteredValue  = $this->filterChain->filter($value, $context);
+        $validatorChain = $this->getValidatorChain();
 
-        if (
-            $this->validatorChain->isValid($filteredValue, $context)
-            || (null === $filteredValue && $this->allowEmpty)
+        if ((null === $filteredValue && $this->allowEmpty)
+            || $validatorChain->isValid($filteredValue, $context)
         ) {
             return new InputFilterResult($value, $filteredValue);
         }
 
         // If it is not valid, we don't want to store the filtered value, as it's
         // incorrect anyway...
-        return new InputFilterResult($value, null, $this->validatorChain->getMessages());
+        return new InputFilterResult($value, null, $validatorChain->getMessages());
     }
 }

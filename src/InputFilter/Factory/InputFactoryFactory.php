@@ -18,7 +18,7 @@
 
 namespace InputFilter\Factory;
 
-use InputFilter\InputFilterFactory;
+use InputFilter\InputFactory;
 use InputFilter\InputFilterPluginManager;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -27,7 +27,7 @@ use Zend\ServiceManager\ServiceLocatorInterface;
  * @author  Michaël Gallego <mic.gallego@gmail.com>
  * @licence MIT
  */
-class InputFilterFactoryFactory implements FactoryInterface
+class InputFactoryFactory implements FactoryInterface
 {
     /**
      * {@inheritDoc}
@@ -43,6 +43,6 @@ class InputFilterFactoryFactory implements FactoryInterface
         /** @var \Zend\Filter\FilterPluginManager $filterManager */
         $filterManager = $serviceLocator->get('FilterManager');
 
-        return new InputFilterFactory($inputFilterManager, $validatorManager, $filterManager);
+        return new InputFactory($inputFilterManager, $validatorManager, $filterManager);
     }
 }

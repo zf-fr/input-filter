@@ -18,7 +18,7 @@ use InputFilter\Result\InputFilterResult;
 class InputCollection extends Input implements InputCollectionInterface
 {
     /**
-     * @var InputCollectionInterface[]|InputInterface[]
+     * @var InputInterface[]
      */
     protected $inputs = [];
 
@@ -77,8 +77,12 @@ class InputCollection extends Input implements InputCollectionInterface
         $filteredData  = [];
         $errorMessages = [];
 
-        // As the input collection can have filters, we first run those globally
-        $data = $this->filterChain->filter($data);
+        // As the input collection can have filters/validators, we first run those globally
+        $result = parent::runAgainst($data, $context);
+
+        if (!$result->isValid()) {
+            $errorMessages[$this->name] = $result->getErrorMessages();
+        }
 
         /** @var InputInterface $input */
         foreach ($this->getIterator() as $input) {
@@ -95,17 +99,6 @@ class InputCollection extends Input implements InputCollectionInterface
                 }
             } else {
                 $filteredData[$name] = $inputFilterResult->getData();
-            }
-        }
-
-        // As an input collection can have validators and filters, we finally run those globally
-        if (!$this->validatorChain->isValid($data, $context)) {
-            $errorMessages[$this->name] = $this->validatorChain->getMessages();
-
-            if ($this->breakOnFailure()) {
-                // We want to break if the input collection fails its own validators, so
-                // the filtered data does not exist, hence the empty array()
-                return $this->buildInputFilterResult($data, [], $errorMessages);
             }
         }
 
