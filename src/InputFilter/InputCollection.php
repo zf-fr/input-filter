@@ -78,17 +78,9 @@ class InputCollection extends Input implements InputCollectionInterface
         $filteredData  = [];
         $errorMessages = [];
 
-        // As an input collection can have also validators and filters, we first apply the
-        // validation for itself
-        if (!$this->validatorChain->isValid($data, $context)) {
-            $errorMessages[$this->name] = $this->validatorChain->getMessages();
-
-            if ($this->breakOnFailure()) {
-                // We want to break if the input collection fails its own validators, so
-                // the filtered data does not exist, hence the empty array()
-                return $this->buildInputFilterResult($data, [], $errorMessages);
-            }
-        }
+        // As the input collection can have filters attached to it, we first run those
+        // to the data
+        $data = $this->filterChain->filter($data);
 
         /** @var InputInterface $input */
         foreach ($this->getIterator() as $input) {
@@ -108,6 +100,18 @@ class InputCollection extends Input implements InputCollectionInterface
             }
         }
 
+        // As an input collection can have also validators and filters, we finally apply the
+        // validation for itself
+        if (!$this->validatorChain->isValid($data, $context)) {
+            $errorMessages[$this->name] = $this->validatorChain->getMessages();
+
+            if ($this->breakOnFailure()) {
+                // We want to break if the input collection fails its own validators, so
+                // the filtered data does not exist, hence the empty array()
+                return $this->buildInputFilterResult($data, [], $errorMessages);
+            }
+        }
+
         return $this->buildInputFilterResult($data, $filteredData, $errorMessages);
     }
 
@@ -121,10 +125,6 @@ class InputCollection extends Input implements InputCollectionInterface
      */
     protected function buildInputFilterResult(array $rawData, array $filteredData, array $errorMessages)
     {
-        // As the input collection can have filters attached to it, we run those
-        // to the data (that was filtered by each input).
-        $filteredData = $this->filterChain->filter($filteredData);
-
         return new InputFilterResult($rawData, $filteredData, $errorMessages);
     }
 
