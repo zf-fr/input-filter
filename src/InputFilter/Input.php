@@ -186,11 +186,11 @@ class Input implements InputInterface
         if ((null === $filteredValue && $this->allowEmpty)
             || $validatorChain->isValid($filteredValue, $context)
         ) {
-            return new InputFilterResult($value, $filteredValue);
+            return new InputFilterResult($value, $filteredValue, []);
         }
 
         // If it is not valid, we don't want to store the filtered value, as it's
         // incorrect anyway...
-        return new InputFilterResult($value, null, $validatorChain->getMessages());
+        return new InputFilterResult($value, null, null, $validatorChain->getMessages());
     }
 }

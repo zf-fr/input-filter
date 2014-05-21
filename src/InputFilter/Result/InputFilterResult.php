@@ -25,6 +25,11 @@ class InputFilterResult implements InputFilterResultInterface
     protected $data;
 
     /**
+     * @var mixed
+     */
+    protected $unknownData;
+
+    /**
      * @var array
      */
     protected $errorMessages = [];
@@ -39,13 +44,15 @@ class InputFilterResult implements InputFilterResultInterface
      *
      * @param mixed $rawData
      * @param mixed $data
+     * @param mixed $unknownData
      * @param array $errorMessages
      */
-    public function __construct($rawData, $data, array $errorMessages = [])
+    public function __construct($rawData, $data, $unknownData, array $errorMessages = [])
     {
         $this->rawData       = $rawData;
         $this->data          = $data;
         $this->errorMessages = $errorMessages;
+        $this->unknownData   = $unknownData;
         $this->isValid       = empty($errorMessages);
     }
 
@@ -78,7 +85,7 @@ class InputFilterResult implements InputFilterResultInterface
      */
     public function getUnknownData()
     {
-        return array_diff_assoc($this->rawData, $this->data);
+        return $this->unknownData;
     }
 
     /**

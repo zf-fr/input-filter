@@ -11,7 +11,6 @@ namespace InputFilter;
 
 use ArrayIterator;
 use InputFilter\Result\InputFilterResult;
-use InputFilter\ValidationGroup\ValidationGroupFilter;
 
 /**
  * Input collection class
@@ -96,7 +95,7 @@ class InputCollection extends Input implements InputCollectionInterface
      */
     public function runAgainst($data, $context = null)
     {
-        $filteredData  = [];
+        $filteredData  = $rawData = [];
         $errorMessages = [];
 
         // As the input collection can have filters/validators, we first run those globally
@@ -112,7 +111,9 @@ class InputCollection extends Input implements InputCollectionInterface
         }
 
         // Prepare the data according to the validation group
-        $data = $this->prepareData($data);
+        if (!empty($data)) {
+            $data = $this->prepareData($data);
+        }
 
         /** @var InputInterface $input */
         foreach ($this->getIterator() as $input) {
@@ -136,16 +137,38 @@ class InputCollection extends Input implements InputCollectionInterface
     }
 
     /**
-     * Build a validation result from the raw data, filtered data and error messages
+     * Build a validation result from the given data, filtered data and error messages
      *
-     * @param  array $rawData
-     * @param  array $filteredData
+     * @param  mixed $data
+     * @param  mixed $filteredData
      * @param  array $errorMessages
      * @return Result\InputFilterResultInterface
      */
-    protected function buildInputFilterResult(array $rawData, array $filteredData, array $errorMessages)
+    protected function buildInputFilterResult($data, $filteredData, array $errorMessages)
     {
-        return new InputFilterResult($rawData, $filteredData, $errorMessages);
+        // We are doing a bit of work here for building the result. Basically, $rawData will contain
+        // values for the inputs given, unfiltered. $filteredData will contain the exact same keys, but
+        // filtered. Finally, $unknownData will contain values for inputs that the input collection
+        // does not know (they are therefore NOT validated)
+        //
+        // Please note that if you use a validation group, any given value, even if it is in the
+        // given data, it won't appear in the validation result
+
+        $unknownData = [];
+
+        if (is_array($data)) {
+            $unknownData  = array_diff_key($data, $filteredData);
+            $data         = array_intersect_key($data, $this->inputs);
+
+            // If we have validation group as array, we must only keep those ones
+            if (is_array($this->validationGroup)) {
+                $data = array_intersect_key($data, array_flip($this->validationGroup));
+            }
+
+            $filteredData = array_intersect_key($filteredData, $data);
+        }
+
+        return new InputFilterResult($data, $filteredData, $unknownData, $errorMessages);
     }
 
     /**

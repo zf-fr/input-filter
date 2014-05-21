@@ -21,6 +21,7 @@ namespace InputFilterTest;
 use InputFilter\Exception\RuntimeException;
 use InputFilter\Input;
 use InputFilter\InputCollection;
+use Zend\Filter\StringTrim;
 use Zend\Validator\NotEmpty;
 
 class InputCollectionTest extends \PHPUnit_Framework_TestCase
@@ -70,6 +71,7 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
     public function dataProvider()
     {
         return [
+            // Validate none
             [
                 'validation_group'     => InputCollection::VALIDATE_NONE,
                 'data'                 => [],
@@ -79,11 +81,42 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
                 'is_valid'             => true
             ],
 
+            // Validate all
             [
                 'validation_group'     => InputCollection::VALIDATE_ALL,
-                'data'                 => ['email' => 'test@example.com', 'first_name' => 'Marco'],
-                'result_raw_data'      => [],
-                'result_filtered_data' => [],
+                'data'                 => ['email' => 'test@example.com', 'first_name' => ' Michaël '],
+                'result_raw_data'      => ['email' => 'test@example.com', 'first_name' => ' Michaël '],
+                'result_filtered_data' => ['email' => 'test@example.com', 'first_name' => 'Michaël'],
+                'result_unknown_data'  => [],
+                'is_valid'             => true
+            ],
+
+            // Validate all with first_name not given
+            [
+                'validation_group'     => InputCollection::VALIDATE_ALL,
+                'data'                 => ['email' => 'test@example.com'],
+                'result_raw_data'      => ['email' => 'test@example.com'],
+                'result_filtered_data' => ['email' => 'test@example.com'],
+                'result_unknown_data'  => [],
+                'is_valid'             => true
+            ],
+
+            // Validate all with unknown value
+            [
+                'validation_group'     => InputCollection::VALIDATE_ALL,
+                'data'                 => ['email' => 'test@example.com', 'unknown' => 'value'],
+                'result_raw_data'      => ['email' => 'test@example.com'],
+                'result_filtered_data' => ['email' => 'test@example.com'],
+                'result_unknown_data'  => ['unknown' => 'value'],
+                'is_valid'             => true
+            ],
+
+            // Validate only one field without unknown fields
+            [
+                'validation_group'     => ['email'],
+                'data'                 => ['email' => 'test@example.com', 'first_name' => 'Michaël'],
+                'result_raw_data'      => ['email' => 'test@example.com'],
+                'result_filtered_data' => ['email' => 'test@example.com'],
                 'result_unknown_data'  => [],
                 'is_valid'             => true
             ]
@@ -101,7 +134,7 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
         array $resultUnknownData,
         $isValid
     ) {
-        /*$inputCollection = new InputCollection();
+        $inputCollection = new InputCollection();
         $inputCollection->setName('user');
 
         // We add one input that is required, one that is optional, and a nested input collection
@@ -111,6 +144,7 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
 
         $input2 = new Input();
         $input2->setName('first_name');
+        $input2->getFilterChain()->attachByName(StringTrim::class);
 
         $addressInputCollection = new InputCollection();
         $addressInputCollection->setName('address');
@@ -129,6 +163,6 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($isValid, $result->isValid());
         $this->assertEquals($resultRawData, $result->getRawData());
         $this->assertEquals($resultFilteredData, $result->getData());
-        $this->assertEquals($resultUnknownData, $result->getData());*/
+        $this->assertEquals($resultUnknownData, $result->getUnknownData());
     }
 }

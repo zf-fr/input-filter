@@ -8,7 +8,7 @@
  * @package   Zend_InputFilter
  */
 
-namespace InputFilter\Result;
+namespace InputFilterTest\Result;
 
 use PHPUnit_Framework_TestCase as TestCase;
 use InputFilter\Result\InputFilterResult;
