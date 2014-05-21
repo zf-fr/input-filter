@@ -40,25 +40,23 @@ class Input implements InputInterface
     protected $breakOnFailure = false;
 
     /**
-     * @var FilterChain
+     * @var FilterChain|null
      */
     protected $filterChain;
 
     /**
-     * @var ValidatorChain
+     * @var ValidatorChain|null
      */
     protected $validatorChain;
 
     /**
-     * Constructor
-     *
-     * @param string $name
+     * @param FilterChain    $filterChain
+     * @param ValidatorChain $validatorChain
      */
-    public function __construct($name = null)
+    public function __construct(FilterChain $filterChain = null, ValidatorChain $validatorChain = null)
     {
-        $this->name           = (string) $name;
-        $this->filterChain    = new FilterChain();
-        $this->validatorChain = new ValidatorChain();
+        $this->filterChain    = $filterChain;
+        $this->validatorChain = $validatorChain;
     }
 
     /**
@@ -131,9 +129,25 @@ class Input implements InputInterface
     /**
      * {@inheritDoc}
      */
+    public function setFilterChain(FilterChain $filterChain)
+    {
+        $this->filterChain = $filterChain;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getFilterChain()
     {
-        return $this->filterChain;
+        return $this->filterChain ?: new FilterChain();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setValidatorChain(ValidatorChain $validatorChain)
+    {
+        $this->validatorChain = $validatorChain;
     }
 
     /**
@@ -141,7 +155,7 @@ class Input implements InputInterface
      */
     public function getValidatorChain()
     {
-        return $this->validatorChain;
+        return $this->validatorChain ?: new ValidatorChain();
     }
 
     /**
@@ -153,7 +167,7 @@ class Input implements InputInterface
 
         if (
             $this->validatorChain->isValid($filteredValue, $context)
-            || (empty($filteredValue) && $this->allowEmpty)
+            || (null === $filteredValue && $this->allowEmpty)
         ) {
             return new InputFilterResult($value, $filteredValue);
         }

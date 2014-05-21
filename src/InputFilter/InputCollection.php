@@ -11,7 +11,6 @@ namespace InputFilter;
 
 use ArrayIterator;
 use InputFilter\Result\InputFilterResult;
-use Zend\Validator\ValidatorChain;
 
 /**
  * Input collection class
@@ -73,13 +72,12 @@ class InputCollection extends Input implements InputCollectionInterface
     /**
      * {@inheritDoc}
      */
-    public function runAgainst($data, $context = null, $validationGroupName = null)
+    public function runAgainst($data, $context = null)
     {
         $filteredData  = [];
         $errorMessages = [];
 
-        // As the input collection can have filters attached to it, we first run those
-        // to the data
+        // As the input collection can have filters, we first run those globally
         $data = $this->filterChain->filter($data);
 
         /** @var InputInterface $input */
@@ -100,8 +98,7 @@ class InputCollection extends Input implements InputCollectionInterface
             }
         }
 
-        // As an input collection can have also validators and filters, we finally apply the
-        // validation for itself
+        // As an input collection can have validators and filters, we finally run those globally
         if (!$this->validatorChain->isValid($data, $context)) {
             $errorMessages[$this->name] = $this->validatorChain->getMessages();
 
