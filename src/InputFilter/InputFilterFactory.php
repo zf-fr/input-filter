@@ -32,6 +32,11 @@ use Zend\Validator\ValidatorPluginManager;
 class InputFilterFactory
 {
     /**
+     * @var InputFilterPluginManager
+     */
+    protected $inputFilterPluginManager;
+
+    /**
      * @var ValidatorPluginManager
      */
     protected $validatorManager;
@@ -42,11 +47,15 @@ class InputFilterFactory
     protected $filterManager;
 
     /**
-     * @param ValidatorPluginManager $validatorManager
-     * @param FilterPluginManager    $filterManager
+     * @param InputFilterPluginManager $inputFilterPluginManager
+     * @param ValidatorPluginManager   $validatorManager
+     * @param FilterPluginManager      $filterManager
      */
-    public function __construct(ValidatorPluginManager $validatorManager, FilterPluginManager $filterManager)
-    {
+    public function __construct(
+        InputFilterPluginManager $inputFilterPluginManager,
+        ValidatorPluginManager $validatorManager,
+        FilterPluginManager $filterManager
+    ) {
         $this->validatorManager = $validatorManager;
         $this->filterManager    = $filterManager;
     }
@@ -98,10 +107,8 @@ class InputFilterFactory
      */
     public function createInput(array &$specification)
     {
-        $type = isset($specification['type']) ? $specification['type'] : Input::class;
-
-        /** @var InputInterface $input */
-        $input = new $type();
+        $type  = isset($specification['type']) ? $specification['type'] : Input::class;
+        $input = $this->inputFilterPluginManager->get($type);
 
         foreach ($specification as $key => $value) {
             switch ($key) {
