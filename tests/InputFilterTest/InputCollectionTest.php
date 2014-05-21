@@ -23,6 +23,7 @@ use InputFilter\Input;
 use InputFilter\InputCollection;
 use Zend\Filter\StringTrim;
 use Zend\Validator\NotEmpty;
+use Zend\Validator\StringLength;
 
 class InputCollectionTest extends \PHPUnit_Framework_TestCase
 {
@@ -111,13 +112,53 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
                 'is_valid'             => true
             ],
 
-            // Validate only one field without unknown fields
+            // Assert fails if required input is not present
+            [
+                'validation_group'     => InputCollection::VALIDATE_ALL,
+                'data'                 => ['first_name' => 'Michaël'],
+                'result_raw_data'      => ['first_name' => 'Michaël'],
+                'result_filtered_data' => ['first_name' => 'Michaël'],
+                'result_unknown_data'  => [],
+                'is_valid'             => false
+            ],
+
+            // Validate only one field (with validation group) without unknown fields
             [
                 'validation_group'     => ['email'],
                 'data'                 => ['email' => 'test@example.com', 'first_name' => 'Michaël'],
                 'result_raw_data'      => ['email' => 'test@example.com'],
                 'result_filtered_data' => ['email' => 'test@example.com'],
                 'result_unknown_data'  => [],
+                'is_valid'             => true
+            ],
+
+            // Validate only one field with a nested input collection
+            [
+                'validation_group'     => InputCollection::VALIDATE_ALL,
+                'data'                 => ['email' => 'test@example.com', 'address' => ['city' => 'a']],
+                'result_raw_data'      => ['email' => 'test@example.com', 'address' => ['city' => 'a']],
+                'result_filtered_data' => ['email' => 'test@example.com'],
+                'result_unknown_data'  => [],
+                'is_valid'             => false
+            ],
+
+            // Validate two fields with a nested input collection
+            [
+                'validation_group'     => InputCollection::VALIDATE_ALL,
+                'data'                 => ['email' => 'test@example.com', 'address' => ['city' => ' abc ']],
+                'result_raw_data'      => ['email' => 'test@example.com', 'address' => ['city' => ' abc ']],
+                'result_filtered_data' => ['email' => 'test@example.com', 'address' => ['city' => 'abc']],
+                'result_unknown_data'  => [],
+                'is_valid'             => true
+            ],
+
+            // Assert can have unknown field in nested inputs
+            [
+                'validation_group'     => InputCollection::VALIDATE_ALL,
+                'data'                 => ['email' => 'test@example.com', 'address' => ['unknown' => 'abc']],
+                'result_raw_data'      => ['email' => 'test@example.com'],
+                'result_filtered_data' => ['email' => 'test@example.com'],
+                'result_unknown_data'  => ['address' => ['unknown' => 'abc']],
                 'is_valid'             => true
             ]
         ];
@@ -140,7 +181,7 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
         // We add one input that is required, one that is optional, and a nested input collection
         $input1 = new Input();
         $input1->setName('email');
-        $input1->getValidatorChain()->attachByName(NotEmpty::class);
+        $input1->setRequired(true);
 
         $input2 = new Input();
         $input2->setName('first_name');
@@ -151,6 +192,8 @@ class InputCollectionTest extends \PHPUnit_Framework_TestCase
 
         $input3 = new Input();
         $input3->setName('city');
+        $input3->getFilterChain()->attachByName(StringTrim::class);
+        $input3->getValidatorChain()->attachByName(StringLength::class, ['min' => 2]);
         $addressInputCollection->addInput($input3);
 
         $inputCollection->addInput($input1);

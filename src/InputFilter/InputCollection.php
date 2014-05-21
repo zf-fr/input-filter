@@ -103,11 +103,15 @@ class InputCollection extends Input implements InputCollectionInterface
 
         if (!$result->isValid()) {
             $errorMessages[$this->name] = $result->getErrorMessages();
+
+            if ($this->breakOnFailure()) {
+                return $this->buildInputFilterResult($data, [], [], $errorMessages);
+            }
         }
 
         // We may want to actually validate nothing
         if ($this->validationGroup === self::VALIDATE_NONE) {
-            return $this->buildInputFilterResult($data, [], $errorMessages);
+            return $this->buildInputFilterResult($data, [], [], $errorMessages);
         }
 
         // Prepare the data according to the validation group
@@ -117,9 +121,16 @@ class InputCollection extends Input implements InputCollectionInterface
 
         /** @var InputInterface $input */
         foreach ($this->getIterator() as $input) {
-            $name     = $input->getName();
-            $rawValue = isset($data[$name]) ? $data[$name] : null;
+            $name   = $input->getName();
+            $exists = array_key_exists($name, $data);
 
+            // If data does not exist in the given payload, and that it's not required, we can
+            // skip it as it's not needed
+            if (!$exists && !$input->isRequired()) {
+                continue;
+            }
+
+            $rawValue          = isset($data[$name]) ? $data[$name] : null;
             $inputFilterResult = $input->runAgainst($rawValue, $context);
 
             if (!$inputFilterResult->isValid()) {
@@ -157,7 +168,7 @@ class InputCollection extends Input implements InputCollectionInterface
         $unknownData = [];
 
         if (is_array($data)) {
-            $unknownData  = array_diff_key($data, $filteredData);
+            $unknownData  = array_diff_key($data, $this->inputs);
             $data         = array_intersect_key($data, $this->inputs);
 
             // If we have validation group as array, we must only keep those ones
@@ -199,14 +210,11 @@ class InputCollection extends Input implements InputCollectionInterface
         // Otherwise, we need to prepare the validation group, and filtering keys that are not in
         // the validation group
         foreach ($this->validationGroup as $key => $value) {
-            if (is_string($key) && isset($this->inputs[$key]) && $this->inputs[$key] instanceof InputCollection) {
-                $this->inputs[$key]->setValidationGroup($value);
-                continue;
-            }
+            $indexedBy       = is_string($key) ? $key : $value;
+            $inputCollection = $this->inputs[$indexedBy];
 
-            if (is_int($key) && isset($this->inputs[$value]) && $this->inputs[$value] instanceof InputCollection) {
-                $this->inputs[$value]->setValidationGroup(self::VALIDATE_ALL);
-                continue;
+            if ($inputCollection instanceof InputCollection) {
+                $inputCollection->setValidationGroup(is_int($key) ? self::VALIDATE_ALL : $value);
             }
         }
 
