@@ -19,6 +19,8 @@
 namespace InputFilter;
 
 use Zend\Filter\FilterChain;
+use Zend\Filter\Digits as DigitsFilter;
+use Zend\Validator\Digits as DigitsValidator;
 use Zend\Validator\ValidatorChain;
 
 class InputTest extends \PHPUnit_Framework_TestCase
@@ -58,5 +60,96 @@ class InputTest extends \PHPUnit_Framework_TestCase
     {
         $input = new Input();
         $this->assertInstanceOf(FilterChain::class, $input->getFilterChain());
+    }
+
+    public function dataProvider()
+    {
+        return [
+            [
+                'data'          => null,
+                'required'      => false,
+                'allow_empty'   => false,
+                'validators'    => [],
+                'filters'       => [],
+                'filtered_data' => null,
+                'is_valid'      => true
+            ],
+
+            // Assert that it fails if is required
+            [
+                'data'          => null,
+                'required'      => true,
+                'allow_empty'   => false,
+                'validators'    => [],
+                'filters'       => [],
+                'filtered_data' => null,
+                'is_valid'      => false
+            ],
+
+            // Assert that it succeeds if is required but allow empty
+            [
+                'data'          => null,
+                'required'      => true,
+                'allow_empty'   => true,
+                'validators'    => [],
+                'filters'       => [],
+                'filtered_data' => null,
+                'is_valid'      => true
+            ],
+
+            // Assert that filters are executed before validation
+            [
+                'data'          => 'bar123',
+                'required'      => true,
+                'allow_empty'   => false,
+                'validators'    => [
+                    new DigitsValidator()
+                ],
+                'filters'       => [
+                    new DigitsFilter()
+                ],
+                'filtered_data' => '123',
+                'is_valid'      => true
+            ],
+
+            // Assert that filtered data is not set if validation fails
+            [
+                'data'          => 'bar123',
+                'required'      => true,
+                'allow_empty'   => false,
+                'validators'    => [
+                    new DigitsValidator()
+                ],
+                'filters'       => [],
+                'filtered_data' => null,
+                'is_valid'      => false
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider dataProvider
+     */
+    public function testFunctional($data, $required, $allowEmpty, $validators, $filters, $filteredData, $isValid)
+    {
+        $input = new Input();
+        $input->setRequired($required);
+        $input->setAllowEmpty($allowEmpty);
+
+        $validatorChain = $input->getValidatorChain();
+        foreach ($validators as $validator) {
+            $validatorChain->attach($validator);
+        }
+
+        $filterChain = $input->getFilterChain();
+        foreach ($filters as $filter) {
+            $filterChain->attach($filter);
+        }
+
+        $result = $input->runAgainst($data);
+
+        $this->assertEquals($isValid, $result->isValid());
+        $this->assertEquals($data, $result->getRawData());
+        $this->assertEquals($filteredData, $result->getData());
     }
 }

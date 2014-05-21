@@ -163,10 +163,10 @@ class InputCollection extends Input implements InputCollectionInterface
     }
 
     /**
-     * @param  array $data
+     * @param  mixed $data
      * @return array
      */
-    protected function prepareData(array $data)
+    protected function prepareData($data)
     {
         // If validation group is set to validate all, then we have nothing to do
         if ($this->validationGroup === self::VALIDATE_ALL) {

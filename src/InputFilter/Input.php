@@ -50,6 +50,11 @@ class Input implements InputInterface
     protected $validatorChain;
 
     /**
+     * @var bool
+     */
+    protected $notEmptyValidatorAdded = false;
+
+    /**
      * @param FilterChain    $filterChain
      * @param ValidatorChain $validatorChain
      */
@@ -148,6 +153,14 @@ class Input implements InputInterface
      */
     public function setValidatorChain(ValidatorChain $validatorChain)
     {
+        $this->validatorChain = $validatorChain;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getValidatorChain()
+    {
         if (null === $this->validatorChain) {
             $this->validatorChain = new ValidatorChain();
         }
@@ -158,20 +171,17 @@ class Input implements InputInterface
     /**
      * {@inheritDoc}
      */
-    public function getValidatorChain()
-    {
-        return $this->validatorChain ?: new ValidatorChain();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function runAgainst($value, $context = null)
     {
-        $filteredValue  = $this->filterChain->filter($value, $context);
+        $filteredValue  = $this->getFilterChain()->filter($value, $context);
         $validatorChain = $this->getValidatorChain();
 
-        // @TODO: how to use the Required validator?
+        if ($this->required && !$this->notEmptyValidatorAdded) {
+            // This may be a bit naive as we can't remove it, but as ValidatorChain does not have
+            // any way to remove validators...
+            $validatorChain->attachByName(NotEmpty::class);
+            $this->notEmptyValidatorAdded = true;
+        }
 
         if ((null === $filteredValue && $this->allowEmpty)
             || $validatorChain->isValid($filteredValue, $context)
